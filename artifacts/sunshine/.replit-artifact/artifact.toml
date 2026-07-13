@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Sunshine"
+version = "1.0.0"
+id = "artifacts/sunshine"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25094
+
+[services.development]
+run = "pnpm --filter @workspace/sunshine run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sunshine", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/sunshine/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25094"
+BASE_PATH = "/"
