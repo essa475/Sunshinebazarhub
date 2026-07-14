@@ -9,7 +9,7 @@ import { Link, useLocation } from "wouter";
 
 export function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal, clearCart } = useCart();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const [, setLocation] = useLocation();
   const createOrder = useCreateOrder();
 
@@ -23,10 +23,16 @@ export function CartPage() {
   const handlePlaceOrder = () => {
     setError(null);
 
+    // Clerk hasn't finished loading auth state yet — wait rather than
+    // wrongly assuming the user is signed out and bouncing them to /sign-in.
+    if (!isLoaded) return;
+
     if (!isSignedIn) {
       setLocation('/sign-in');
       return;
     }
+
+    if (items.length === 0) return;
 
     createOrder.mutate(
       {
@@ -42,8 +48,14 @@ export function CartPage() {
           setOrderSuccess({ orderNumber: order.orderNumber, total: order.total });
           clearCart();
         },
-        onError: () => {
-          setError("Something went wrong placing your order. Please try again.");
+        onError: (err) => {
+          console.error("Failed to place order:", err);
+          const message = err instanceof Error ? err.message : undefined;
+          setError(
+            message
+              ? `Couldn't place your order: ${message}`
+              : "Something went wrong placing your order. Please try again.",
+          );
         },
       },
     );
@@ -202,9 +214,14 @@ export function CartPage() {
                   size="lg"
                   className="w-full rounded-xl text-lg h-14 transition-transform active:scale-[0.98]"
                   onClick={handlePlaceOrder}
-                  disabled={createOrder.isPending}
+                  disabled={!isLoaded || createOrder.isPending}
                 >
-                  {createOrder.isPending ? (
+                  {!isLoaded ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      Loading...
+                    </span>
+                  ) : createOrder.isPending ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                       Booking Order...

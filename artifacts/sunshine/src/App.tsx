@@ -13,6 +13,7 @@ import { Footer } from '@/components/Layout/Footer';
 // Pages
 import { Home } from '@/pages/Home';
 import { CategoryPage } from '@/pages/Category';
+import { SearchPage } from '@/pages/Search';
 import { CartPage } from '@/pages/Cart';
 import { OrdersPage } from '@/pages/Orders';
 import { AboutPage } from '@/pages/About';
@@ -138,6 +139,7 @@ function AppRouter() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/category/:category" component={CategoryPage} />
+          <Route path="/search" component={SearchPage} />
           <Route path="/cart" component={CartPage} />
           <Route path="/orders" component={OrdersPage} />
           <Route path="/sign-in/*?" component={SignInPage} />

@@ -66,6 +66,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
 
   const parsed = CreateOrderBody.safeParse(req.body);
   if (!parsed.success) {
+    req.log.warn({ body: req.body, issues: parsed.error.issues }, "Invalid create-order payload");
     res.status(400).json({ error: parsed.error.message });
     return;
   }
