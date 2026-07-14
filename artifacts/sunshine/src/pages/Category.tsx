@@ -1,16 +1,25 @@
+import { useState } from "react";
 import { useParams } from "wouter";
-import { PRODUCTS, Category } from "@/data/products";
+import { useListProducts } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ProductCard";
+import { Button } from "@/components/ui/button";
+import { ShoppingBag, Loader2 } from "lucide-react";
 
-import { ShoppingBag } from "lucide-react";
+const PAGE_SIZE = 24;
 
 export function CategoryPage() {
   const { category } = useParams();
-  const decodedCategory = category ? decodeURIComponent(category) as Category : null;
+  const decodedCategory = category ? decodeURIComponent(category) : undefined;
+  const [page, setPage] = useState(1);
 
-  const filteredProducts = decodedCategory 
-    ? PRODUCTS.filter(p => p.category === decodedCategory)
-    : PRODUCTS;
+  const { data, isLoading, isFetching } = useListProducts(
+    { category: decodedCategory, page, limit: PAGE_SIZE },
+    { query: { placeholderData: (prev: any) => prev } as any },
+  );
+
+  const products = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="min-h-screen bg-background pb-20 pt-8">
@@ -20,16 +29,44 @@ export function CategoryPage() {
             {decodedCategory || "All Products"}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Showing {filteredProducts.length} items
+            {isLoading ? "Loading..." : `Showing ${products.length} of ${total} items`}
           </p>
         </div>
 
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        {isLoading ? (
+          <div className="py-32 flex justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : products.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+              {products.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-10">
+                <Button
+                  variant="outline"
+                  disabled={page <= 1 || isFetching}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground font-medium">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={page >= totalPages || isFetching}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="py-20 text-center flex flex-col items-center">
             <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">

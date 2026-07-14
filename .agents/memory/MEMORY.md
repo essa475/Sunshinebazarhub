@@ -1,0 +1,3 @@
+- [Clerk + Tailwind v4 setup](clerk-tailwind-v4.md) — Clerk requires `@layer` ordering and `optimize:false` in vite plugin or styling silently breaks.
+- [Generated API hooks with extra query options](generated-api-hook-options.md) — orval-generated `useList*` hooks need `as any` cast when passing `enabled`/`placeholderData`; the strict UseQueryOptions generic rejects partial objects.
+- [Large synthetic catalogs from real images](synthetic-catalog-real-images.md) — cycle a small set of real web-searched photos across many generated product variants instead of mass AI image generation or one-image-per-product.

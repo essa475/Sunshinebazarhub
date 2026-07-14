@@ -1,13 +1,13 @@
-import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, User, Menu, Sun } from "lucide-react";
+import { Link } from "wouter";
+import { Search, ShoppingCart, User, Sun } from "lucide-react";
+import { useUser, useClerk, Show } from "@clerk/react";
 import { useCart } from "@/store/CartContext";
-import { useAuth } from "@/store/AuthContext";
-import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const { totalItems } = useCart();
-  const { user } = useAuth();
-  const [location, setLocation] = useLocation();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-primary">
@@ -36,15 +36,30 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <Link href="/auth" className="flex flex-col items-center justify-center text-white/90 hover:text-white group">
-            <div className="p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">
-              <User className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">
-              {user ? 'Account' : 'Login'}
-            </span>
-          </Link>
-          
+          <Show when="signed-in">
+            <button
+              onClick={() => signOut({ redirectUrl: basePath || '/' })}
+              className="flex flex-col items-center justify-center text-white/90 hover:text-white group"
+            >
+              <div className="p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">
+                <User className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">
+                {user?.firstName || 'Account'}
+              </span>
+            </button>
+          </Show>
+          <Show when="signed-out">
+            <Link href="/sign-in" className="flex flex-col items-center justify-center text-white/90 hover:text-white group">
+              <div className="p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">
+                <User className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5 hidden sm:block">
+                Login
+              </span>
+            </Link>
+          </Show>
+
           <Link href="/cart" className="relative flex flex-col items-center justify-center text-white/90 hover:text-white group">
             <div className="p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">
               <ShoppingCart className="h-5 w-5" />

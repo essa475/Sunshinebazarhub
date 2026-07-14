@@ -1,9 +1,8 @@
-import { Product } from "@/data/products";
+import type { Product } from '@workspace/api-client-react';
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/store/CartContext";
 import { Star, Plus } from "lucide-react";
-import { Link } from "wouter";
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +22,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <img 
           src={product.image} 
           alt={product.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>

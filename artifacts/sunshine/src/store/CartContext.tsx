@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Product } from '@/data/products';
+import type { Product } from '@workspace/api-client-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface CartItem {
@@ -10,8 +10,8 @@ interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: number) => void;
+  updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
@@ -42,32 +42,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((current) => {
       const existing = current.find(item => item.product.id === product.id);
       if (existing) {
-        return current.map(item => 
-          item.product.id === product.id 
+        return current.map(item =>
+          item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
       return [...current, { product, quantity }];
     });
-    
+
     toast({
       title: "Added to Cart!",
       description: `${quantity}x ${product.name} has been added.`,
     });
   }, [toast]);
 
-  const removeFromCart = useCallback((productId: string) => {
+  const removeFromCart = useCallback((productId: number) => {
     setItems(current => current.filter(item => item.product.id !== productId));
   }, []);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    setItems(current => 
-      current.map(item => 
+    setItems(current =>
+      current.map(item =>
         item.product.id === productId ? { ...item, quantity } : item
       )
     );
