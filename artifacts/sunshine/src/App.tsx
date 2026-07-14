@@ -1,14 +1,14 @@
-import { useEffect, useRef } from 'react';
-import { ClerkProvider, SignIn, SignUp, useClerk } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
-import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
-import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { AppProviders } from '@/store';
+import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Navbar } from '@/components/Layout/Navbar';
 import { Footer } from '@/components/Layout/Footer';
+import { Button } from '@/components/ui/button';
+import { Sun, Eye, EyeOff } from 'lucide-react';
 
 // Pages
 import { Home } from '@/pages/Home';
@@ -19,117 +19,213 @@ import { OrdersPage } from '@/pages/Orders';
 import { AboutPage } from '@/pages/About';
 import NotFound from '@/pages/not-found';
 
-// REQUIRED — copy verbatim. Resolves the key from window.location.hostname so the
-// same build serves multiple Clerk custom domains. Do not inline the env var, leave
-// publishableKey undefined, or replace publishableKeyFromHost with anything else.
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+// ── Auth pages ────────────────────────────────────────────────────────────────
 
-// REQUIRED — copy verbatim. Empty in dev (Clerk hits dev FAPI directly), auto-set
-// in prod. Do NOT gate on import.meta.env.PROD / NODE_ENV — the empty dev value
-// is intentional, and any branching breaks the prod proxy.
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-
-// Clerk passes full paths to routerPush/routerReplace, but wouter's
-// setLocation prepends the base — strip it to avoid doubling.
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || '/'
-    : path;
-}
-
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-}
-
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: 'clerk',
-  options: {
-    logoPlacement: 'inside' as const,
-    logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
-  },
-  variables: {
-    colorPrimary: '#F97316',
-    colorForeground: '#111827',
-    colorMutedForeground: '#64748b',
-    colorDanger: '#DC2626',
-    colorBackground: '#ffffff',
-    colorInput: '#F8FAFC',
-    colorInputForeground: '#111827',
-    colorNeutral: '#E2E8F0',
-    fontFamily: 'Outfit, sans-serif',
-    borderRadius: '0.75rem',
-  },
-  elements: {
-    rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-slate-900 font-black',
-    headerSubtitle: 'text-slate-500',
-    socialButtonsBlockButtonText: 'text-slate-700 font-medium',
-    formFieldLabel: 'text-slate-700 font-medium',
-    footerActionLink: 'text-orange-600 font-semibold hover:text-orange-700',
-    footerActionText: 'text-slate-500',
-    dividerText: 'text-slate-400',
-    identityPreviewEditButton: 'text-orange-600',
-    formFieldSuccessText: 'text-green-600',
-    alertText: 'text-red-600',
-    logoBox: 'flex justify-center mb-2',
-    logoImage: 'h-10 w-10',
-    socialButtonsBlockButton: 'border-slate-200 hover:bg-slate-50',
-    formButtonPrimary: 'bg-orange-500 hover:bg-orange-600 text-white font-bold',
-    formFieldInput: 'border-slate-200 focus:border-orange-500',
-    footerAction: 'text-slate-500',
-    dividerLine: 'bg-slate-200',
-    alert: 'bg-red-50 border-red-200',
-    otpCodeFieldInput: 'border-slate-200',
-    formFieldRow: 'mb-4',
-    main: 'gap-4',
-  },
-};
-
-function SignInPage() {
+function AuthCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-background px-4 py-16">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-8">
+        <div className="flex justify-center mb-6">
+          <div className="bg-primary p-2 rounded-full">
+            <Sun className="h-8 w-8 text-white" strokeWidth={3} />
+          </div>
+        </div>
+        {children}
+      </div>
     </div>
+  );
+}
+
+function SignInPage() {
+  const { signIn } = useAuth();
+  const [, setLocation] = useLocation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const result = await signIn(email, password);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setLocation('/');
+    }
+  };
+
+  return (
+    <AuthCard>
+      <h2 className="text-2xl font-black text-center mb-1">Welcome back</h2>
+      <p className="text-muted-foreground text-center text-sm mb-6">
+        Sign in to continue shopping at Sunshine
+      </p>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-slate-700 block mb-1">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="you@example.com"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-slate-700 block mb-1">Password</label>
+          <div className="relative">
+            <input
+              type={showPw ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>
+        )}
+        <Button type="submit" className="w-full rounded-xl h-11" disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign In'}
+        </Button>
+      </form>
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        Don't have an account?{' '}
+        <button
+          className="text-primary font-semibold hover:underline"
+          onClick={() => setLocation('/sign-up')}
+        >
+          Sign up
+        </button>
+      </p>
+    </AuthCard>
   );
 }
 
 function SignUpPage() {
+  const { signUp } = useAuth();
+  const [, setLocation] = useLocation();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const result = await signUp(email, password, firstName, lastName);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setLocation('/');
+    }
+  };
+
   return (
-    <div className="flex min-h-[70vh] items-center justify-center bg-background px-4 py-16">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
+    <AuthCard>
+      <h2 className="text-2xl font-black text-center mb-1">Join Sunshine</h2>
+      <p className="text-muted-foreground text-center text-sm mb-6">
+        Create an account to start shopping
+      </p>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-sm font-medium text-slate-700 block mb-1">First Name</label>
+            <input
+              type="text"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Jane"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-700 block mb-1">Last Name</label>
+            <input
+              type="text"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Doe"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-slate-700 block mb-1">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="you@example.com"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-slate-700 block mb-1">
+            Password <span className="text-muted-foreground font-normal">(min 6 chars)</span>
+          </label>
+          <div className="relative">
+            <input
+              type={showPw ? 'text' : 'password'}
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>
+        )}
+        <Button type="submit" className="w-full rounded-xl h-11" disabled={loading}>
+          {loading ? 'Creating account…' : 'Create Account'}
+        </Button>
+      </form>
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        Already have an account?{' '}
+        <button
+          className="text-primary font-semibold hover:underline"
+          onClick={() => setLocation('/sign-in')}
+        >
+          Sign in
+        </button>
+      </p>
+    </AuthCard>
   );
 }
 
-// Keeps the React Query cache from leaking data between different signed-in users.
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const qc = useQueryClient();
-  const prevUserIdRef = useRef<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        qc.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, qc]);
-
-  return null;
-}
+// ── App router ────────────────────────────────────────────────────────────────
 
 function AppRouter() {
   return (
@@ -142,8 +238,8 @@ function AppRouter() {
           <Route path="/search" component={SearchPage} />
           <Route path="/cart" component={CartPage} />
           <Route path="/orders" component={OrdersPage} />
-          <Route path="/sign-in/*?" component={SignInPage} />
-          <Route path="/sign-up/*?" component={SignUpPage} />
+          <Route path="/sign-in" component={SignInPage} />
+          <Route path="/sign-up" component={SignUpPage} />
           <Route path="/about" component={AboutPage} />
           <Route component={NotFound} />
         </Switch>
@@ -153,48 +249,19 @@ function AppRouter() {
   );
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
-  return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      localization={{
-        signIn: {
-          start: {
-            title: 'Welcome back',
-            subtitle: 'Sign in to continue shopping at Sunshine',
-          },
-        },
-        signUp: {
-          start: {
-            title: 'Join Sunshine',
-            subtitle: 'Create an account to start shopping',
-          },
-        },
-      }}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
-        <AppProviders>
-          <AppRouter />
-          <Toaster />
-        </AppProviders>
-      </QueryClientProvider>
-    </ClerkProvider>
-  );
-}
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AppProviders>
+            <AppRouter />
+            <Toaster />
+          </AppProviders>
+        </QueryClientProvider>
+      </AuthProvider>
     </WouterRouter>
   );
 }

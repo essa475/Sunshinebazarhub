@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { Product } from '@workspace/api-client-react';
+import type { Product } from '@/data/products';
 import { useToast } from '@/components/ui/use-toast';
 
 interface CartItem {

@@ -1,22 +1,9 @@
 ########################################################################
 # Netlify config for the Sunshine storefront (frontend only)
 #
-# IMPORTANT — read before deploying:
-# Sunshine is a monorepo with two services:
-#   1. artifacts/sunshine    — the React/Vite storefront (static, deployable here)
-#   2. artifacts/api-server  — an Express API + Postgres + the Clerk auth proxy
-#
-# Netlify can only host the static frontend build below. It cannot run the
-# long-lived Express API server or the Clerk proxy middleware, and Netlify
-# Functions would require rewriting the entire backend. If you deploy only
-# this frontend to Netlify, product listings, search, cart checkout, and
-# login will not work unless artifacts/api-server is also hosted somewhere
-# that can run a persistent Node process (e.g. keep it deployed on Replit,
-# Render, Railway, Fly.io, etc.) and you point this build at that API's URL
-# via the API_BASE_URL environment variable below.
-#
-# Publishing the whole app (frontend + API + Clerk proxy together) through
-# Replit Deployments is the supported path and requires no extra wiring.
+# This deploys the React/Vite storefront as a static site.
+# Auth and orders are localStorage-based — no backend required.
+# Products come from a bundled static catalog.
 ########################################################################
 
 [build]
@@ -26,18 +13,11 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # BASE_PATH must be "/" for Netlify (root deployment, no sub-path)
+  BASE_PATH = "/"
 
 # Single-page app: let client-side routing (wouter) handle all paths.
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# If artifacts/api-server is hosted elsewhere, proxy /api/* requests to it so
-# the frontend's relative /api/... calls keep working. Replace the target
-# with your deployed API server's URL, then uncomment.
-# [[redirects]]
-#   from = "/api/*"
-#   to = "https://your-api-server-domain.example.com/api/:splat"
-#   status = 200
-#   force = true

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearch, useLocation } from "wouter";
-import { useListProducts } from "@workspace/api-client-react";
+import { useListProducts } from "@/lib/api";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Search as SearchIcon, Loader2 } from "lucide-react";

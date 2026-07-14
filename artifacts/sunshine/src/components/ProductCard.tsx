@@ -1,4 +1,4 @@
-import type { Product } from '@workspace/api-client-react';
+import type { Product } from '@/data/products';
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/store/CartContext";

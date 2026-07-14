@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCart } from "@/store/CartContext";
-import { useCreateOrder } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useCreateOrder } from "@/lib/api";
+import { useAuth } from "@/auth/AuthContext";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, CheckCircle2, PartyPopper } from "lucide-react";
@@ -9,7 +9,7 @@ import { Link, useLocation } from "wouter";
 
 export function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal, clearCart } = useCart();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAuth();
   const [, setLocation] = useLocation();
   const createOrder = useCreateOrder();
 
@@ -23,8 +23,6 @@ export function CartPage() {
   const handlePlaceOrder = () => {
     setError(null);
 
-    // Clerk hasn't finished loading auth state yet — wait rather than
-    // wrongly assuming the user is signed out and bouncing them to /sign-in.
     if (!isLoaded) return;
 
     if (!isSignedIn) {
@@ -64,7 +62,6 @@ export function CartPage() {
   if (orderSuccess) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-background px-4 relative overflow-hidden">
-        {/* Confetti-ish decorative blobs */}
         <div className="absolute -top-20 -left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
 
@@ -111,7 +108,7 @@ export function CartPage() {
         {items.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-border shadow-sm animate-in fade-in zoom-in-95 duration-500">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingCartIcon className="w-10 h-10 text-muted-foreground/40" />
+              <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
             </div>
             <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
             <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
@@ -216,12 +213,7 @@ export function CartPage() {
                   onClick={handlePlaceOrder}
                   disabled={!isLoaded || createOrder.isPending}
                 >
-                  {!isLoaded ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      Loading...
-                    </span>
-                  ) : createOrder.isPending ? (
+                  {createOrder.isPending ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                       Booking Order...
@@ -244,26 +236,5 @@ export function CartPage() {
         )}
       </div>
     </div>
-  );
-}
-
-function ShoppingCartIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="8" cy="21" r="1" />
-      <circle cx="19" cy="21" r="1" />
-      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-    </svg>
   );
 }

@@ -1,12 +1,14 @@
-import { useListOrders } from "@workspace/api-client-react";
-import { useUser, SignInButton } from "@clerk/react";
+import { useListOrders } from "@/lib/api";
+import { useAuth } from "@/auth/AuthContext";
 import { formatPrice } from "@/lib/utils";
 import { Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 export function OrdersPage() {
-  const { isSignedIn, isLoaded } = useUser();
-  const { data: orders, isLoading } = useListOrders({ query: { enabled: !!isSignedIn } as any });
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, setLocation] = useLocation();
+  const { data: orders, isLoading } = useListOrders({ query: { enabled: !!isSignedIn } });
 
   if (isLoaded && !isSignedIn) {
     return (
@@ -17,9 +19,9 @@ export function OrdersPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">Sign in to view orders</h2>
           <p className="text-muted-foreground mb-8">Your order history lives in your Sunshine account.</p>
-          <SignInButton>
-            <Button size="lg" className="rounded-full px-8">Sign In</Button>
-          </SignInButton>
+          <Button size="lg" className="rounded-full px-8" onClick={() => setLocation('/sign-in')}>
+            Sign In
+          </Button>
         </div>
       </div>
     );

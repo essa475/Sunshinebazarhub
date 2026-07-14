@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { Search, ShoppingCart, User, Sun, Package, LogOut, ChevronDown } from "lucide-react";
-import { useUser, useClerk, Show } from "@clerk/react";
+import { useAuth } from "@/auth/AuthContext";
 import { useCart } from "@/store/CartContext";
 
 function SearchBar({ className, inputClassName }: { className?: string; inputClassName?: string }) {
@@ -37,11 +37,10 @@ function SearchBar({ className, inputClassName }: { className?: string; inputCla
 }
 
 function AccountMenu() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user, signOut } = useAuth();
+  const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   useEffect(() => {
     if (!open) return;
@@ -73,10 +72,10 @@ function AccountMenu() {
         <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-border overflow-hidden text-foreground animate-in fade-in slide-in-from-top-2 duration-200 z-50">
           <div className="px-4 py-3 border-b border-border">
             <p className="font-semibold text-sm truncate">
-              {user?.fullName || user?.firstName || "Welcome"}
+              {user?.firstName} {user?.lastName}
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              {user?.primaryEmailAddress?.emailAddress}
+              {user?.email}
             </p>
           </div>
           <Link
@@ -89,7 +88,8 @@ function AccountMenu() {
           <button
             onClick={() => {
               setOpen(false);
-              signOut({ redirectUrl: basePath || '/' });
+              signOut();
+              setLocation('/');
             }}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
           >
@@ -102,6 +102,7 @@ function AccountMenu() {
 }
 
 export function Navbar() {
+  const { isSignedIn } = useAuth();
   const { totalItems } = useCart();
 
   return (
@@ -125,10 +126,9 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <Show when="signed-in">
+          {isSignedIn ? (
             <AccountMenu />
-          </Show>
-          <Show when="signed-out">
+          ) : (
             <Link href="/sign-in" className="flex flex-col items-center justify-center text-white/90 hover:text-white group">
               <div className="p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">
                 <User className="h-5 w-5" />
@@ -137,7 +137,7 @@ export function Navbar() {
                 Login
               </span>
             </Link>
-          </Show>
+          )}
 
           <Link href="/cart" className="relative flex flex-col items-center justify-center text-white/90 hover:text-white group">
             <div className="p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">

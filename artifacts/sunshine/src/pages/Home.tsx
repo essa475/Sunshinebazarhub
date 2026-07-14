@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useListProducts, type Product } from "@workspace/api-client-react";
+import { useListProducts, type Product } from "@/lib/api";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowRight, Loader2 } from "lucide-react";
