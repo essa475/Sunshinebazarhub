@@ -126,7 +126,7 @@ export function AboutPage() {
             className="text-4xl md:text-6xl font-black italic text-white drop-shadow-2xl tracking-widest uppercase"
             style={{ fontStyle: "italic", textShadow: "0 4px 24px rgba(0,0,0,0.3)" }}
           >
-            RETIRE CAPTAIN IHSAN
+            RTD CAPTAIN IHSAN
           </motion.h2>
           <motion.div
             className="w-24 h-1.5 bg-white/60 rounded-full mx-auto mt-4"
@@ -265,7 +265,7 @@ export function AboutPage() {
             </div>
             <div>
               <p className="text-xl font-black text-primary italic uppercase tracking-wide">
-                RETIRE CAPTAIN IHSAN
+                RTD CAPTAIN IHSAN
               </p>
               <p className="text-sm text-muted-foreground">Founder &amp; Chief Sunshine Officer</p>
             </div>
